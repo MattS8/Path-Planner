@@ -23,6 +23,8 @@
 #define DEFAULT_GOAL_ROW ?
 #define DEFAULT_GOAL_COL ?
 
+#define MAX_ADJACENT_NEIGHBORS 6
+
 #include <vector>
 #include <unordered_map>
 #include "../TileSystem/Tile.h"
@@ -53,7 +55,47 @@ namespace fullsail_ai { namespace algorithms {
 		std::unordered_map<SearchNode*, PlannerNode*> visited;
 
 		TileMap* tileMap;
+		
 		//TODO: Add other supporting variables and functions
+		std::pair<int, int> adjacentTilesEven[6];
+		std::pair<int, int> adjacentTilesOdd[6];
+
+		class CompareNodes
+		{
+		public:
+			bool operator()(PlannerNode* best, PlannerNode* other)
+			{
+				return true;
+					
+					//best == nullptr
+					//|| (other != nullptr &&
+					//	best->searchNode->tile->getWeight()
+					//	< other->searchNode->tile->getWeight()
+					//   );
+			}
+		};
+
+		PriorityQueue<PlannerNode*, CompareNodes> queue;
+
+
+		//! \brief Cleans allocated space.
+		void ClearContainers();
+
+		//! \brief Guarantees to return a SearchNode
+		//! 
+		//! Searches nodes for a <code>%SearchNode</code> for the given tile. 
+		//! If none exists a new <code>%SearchNode</code> is created and added
+		//! to the map of nodes.
+		//! 
+		//! \param   tile  the tile corresponding to the desired 
+		//!				   <code>%SearchNode</code>.
+		//! 
+		//! /return  Guaranteed valid pointer	
+		SearchNode* GetSearchNode(Tile* tile);
+
+		// DEBUG FUNCTIONS
+		void debug_PrintSearchNodes();
+		void debug_DrawSearchNodeConnections(SearchNode* searchNode = nullptr);
 
 	public:
 		//! \brief Default constructor.
