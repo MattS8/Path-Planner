@@ -82,9 +82,8 @@ namespace fullsail_ai { namespace algorithms {
 		public:
 			bool operator()(PlannerNode* best, PlannerNode* other)
 			{
-				return true;
-					//best == nullptr
-					//|| (other != nullptr && best->nodeCost < other->nodeCost);
+				return best == nullptr
+					|| (other != nullptr && best->nodeCost > other->nodeCost);
 			}
 		};
 
