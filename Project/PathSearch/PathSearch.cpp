@@ -79,46 +79,6 @@ namespace fullsail_ai { namespace algorithms {
 		}
 	}
 
-	void PathSearch::debug_DrawSearchNodeConnections(SearchNode* searchNode)
-	{
-		if (searchNode == nullptr)
-			searchNode = nodes.begin()->second;
-		if (searchNode == nullptr)
-			return;
-
-		if (visited.find(searchNode) != visited.end())
-			return;
-		visited.insert(std::pair<SearchNode*, PlannerNode*>(searchNode, nullptr));
-
-		unsigned int color = 0xFFFF0000;
-
-		for (int i = 0; i < searchNode->neighbors.size(); i++)
-		{
-			searchNode->tile->addLineTo(searchNode->neighbors[i]->tile, color);
-			debug_DrawSearchNodeConnections(searchNode->neighbors[i]);
-		}
-	}
-
-	void PathSearch::debug_PrintSearchNodes()
-	{
-		for (auto itter = nodes.begin(); itter != nodes.end(); itter++)
-		{
-			std::cout << "Node: (" << itter->second->tile->getXCoordinate()
-				<< ", " << itter->second->tile->getYCoordinate()
-				<< ") has " << itter->second->neighbors.size()
-				<< " neighbors:";
-
-			for (int i = 0; i < itter->second->neighbors.size(); i++)
-			{
-				SearchNode* neighbor = itter->second->neighbors[i];
-				std::cout << "\n\t(" << neighbor->tile->getXCoordinate()
-					<< ", " << neighbor->tile->getYCoordinate() << ")";
-			}
-
-			std::cout << "\n";
-		}
-	}
-
 	void PathSearch::enter(int startRow, int startColumn, int goalRow, int goalColumn)
 	{
 		Tile* startTile = tileMap->getTile(startRow, startColumn);
@@ -177,6 +137,46 @@ namespace fullsail_ai { namespace algorithms {
 	{
 		std::vector<Tile const*> temp;
 		return temp;
+	}
+
+	void PathSearch::debug_DrawSearchNodeConnections(SearchNode* searchNode)
+	{
+		if (searchNode == nullptr)
+			searchNode = nodes.begin()->second;
+		if (searchNode == nullptr)
+			return;
+
+		if (visited.find(searchNode) != visited.end())
+			return;
+		visited.insert(std::pair<SearchNode*, PlannerNode*>(searchNode, nullptr));
+
+		unsigned int color = 0xFFFF0000;
+
+		for (int i = 0; i < searchNode->neighbors.size(); i++)
+		{
+			searchNode->tile->addLineTo(searchNode->neighbors[i]->tile, color);
+			debug_DrawSearchNodeConnections(searchNode->neighbors[i]);
+		}
+	}
+
+	void PathSearch::debug_PrintSearchNodes()
+	{
+		for (auto itter = nodes.begin(); itter != nodes.end(); itter++)
+		{
+			std::cout << "Node: (" << itter->second->tile->getXCoordinate()
+				<< ", " << itter->second->tile->getYCoordinate()
+				<< ") has " << itter->second->neighbors.size()
+				<< " neighbors:";
+
+			for (int i = 0; i < itter->second->neighbors.size(); i++)
+			{
+				SearchNode* neighbor = itter->second->neighbors[i];
+				std::cout << "\n\t(" << neighbor->tile->getXCoordinate()
+					<< ", " << neighbor->tile->getYCoordinate() << ")";
+			}
+
+			std::cout << "\n";
+		}
 	}
 
 	void PathSearch::ClearContainers()
