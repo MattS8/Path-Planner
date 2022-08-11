@@ -98,21 +98,55 @@ namespace fullsail_ai { namespace algorithms {
 		startPNode->searchNode = startNode;
 		startPNode->parent = nullptr;
 		startPNode->setNodeCost(goalTile);
-		visited.insert(std::pair<SearchNode*, PlannerNode*>(startNode, startPNode));
+
+		// Push start onto queue
+		queue.push(startPNode);
+		visited[startNode] = startPNode;
 
 		// Add neighbor PlannerNodes to the queue
-		for (int i = 0; i < startNode->neighbors.size(); ++i)
-		{
-			PlannerNode* pNode = new PlannerNode();
-			pNode->searchNode = startNode->neighbors[i];
-			pNode->parent;
-			pNode->setNodeCost(goalTile);
-			queue.push(pNode);
-		}
+		//for (int i = 0; i < startNode->neighbors.size(); ++i)
+		//{
+		//	PlannerNode* pNode = new PlannerNode();
+		//	pNode->searchNode = startNode->neighbors[i];
+		//	pNode->parent;
+		//	pNode->setNodeCost(goalTile);
+		//	queue.push(pNode);
+		//}
 	}
 
 	void PathSearch::update(long timeslice)
 	{
+		while (!queue.empty() && timeslice > -1)
+		{
+			PlannerNode* current = queue.front();
+			queue.pop();
+
+			if (current->searchNode == goalNode)
+			{
+				// Goal Achieved
+
+				return;
+			}
+
+			for (int i = 0; i < current->searchNode->neighbors.size(); ++i)
+			{
+				SearchNode* successor = current->searchNode->neighbors[i];
+
+				if (visited.find(successor) == visited.end())
+				{
+					PlannerNode* successorNode = new PlannerNode();
+					successorNode->searchNode = successor;
+					successorNode->parent = current;
+					successorNode->setNodeCost(goalNode->tile);
+
+					visited[successor] = successorNode;
+					queue.push(successorNode);
+				}
+			}
+
+			timeslice -= 1;
+		}
+
 	}
 
 	void PathSearch::exit()
@@ -130,7 +164,7 @@ namespace fullsail_ai { namespace algorithms {
 
 	bool PathSearch::isDone() const
 	{
-		return true;
+		return queue.empty();
 	}
 
 	std::vector<Tile const*> const PathSearch::getSolution() const
