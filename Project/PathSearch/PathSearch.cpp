@@ -26,15 +26,6 @@ namespace fullsail_ai { namespace algorithms {
 		ClearContainers();
 	}
 
-	void PathSearch::ClearContainers()
-	{
-		for (auto itter = nodes.begin(); itter != nodes.end(); itter++)
-			delete itter->second;
-
-		for (auto itter = visited.begin(); itter != visited.end(); itter++)
-			delete itter->second;
-	}
-
 	PathSearch::SearchNode* PathSearch::GetSearchNode(Tile* tile)
 	{
 		SearchNode* newNode;
@@ -133,17 +124,31 @@ namespace fullsail_ai { namespace algorithms {
 		Tile* startTile = tileMap->getTile(startRow, startColumn);
 		Tile* goalTile = tileMap->getTile(goalRow, goalColumn);
 
+		// Ensure start and goal tiles are navigable
 		if (startTile == 0 || goalTile == 0
 			|| startTile->getWeight() == 0 || goalTile->getWeight() == 0)
 			return;
 
+		// Set the goal node
+		goalNode = nodes.find(goalTile)->second;
+
+		// Create PlannerNode for start
 		SearchNode* startNode = nodes.find(startTile)->second;
 		PlannerNode* startPNode = new PlannerNode();
 		startPNode->searchNode = startNode;
 		startPNode->parent = nullptr;
+		startPNode->setNodeCost(goalTile);
+		visited.insert(std::pair<SearchNode*, PlannerNode*>(startNode, startPNode));
 
-		visited.insert(std::pair<SearchNode*, PlannerNode*>());
-
+		// Add neighbor PlannerNodes to the queue
+		for (int i = 0; i < startNode->neighbors.size(); ++i)
+		{
+			PlannerNode* pNode = new PlannerNode();
+			pNode->searchNode = startNode->neighbors[i];
+			pNode->parent;
+			pNode->setNodeCost(goalTile);
+			queue.push(pNode);
+		}
 	}
 
 	void PathSearch::update(long timeslice)
@@ -152,10 +157,15 @@ namespace fullsail_ai { namespace algorithms {
 
 	void PathSearch::exit()
 	{
+		ClearQueue();
+
+		for (auto itter = visited.begin(); itter != visited.end(); itter++)
+			delete itter->second;
 	}
 
 	void PathSearch::shutdown()
 	{
+		ClearContainers();
 	}
 
 	bool PathSearch::isDone() const
@@ -167,6 +177,29 @@ namespace fullsail_ai { namespace algorithms {
 	{
 		std::vector<Tile const*> temp;
 		return temp;
+	}
+
+	void PathSearch::ClearContainers()
+	{
+		ClearQueue();
+
+		for (auto itter = nodes.begin(); itter != nodes.end(); itter++)
+			delete itter->second;
+
+		for (auto itter = visited.begin(); itter != visited.end(); itter++)
+			delete itter->second;
+	}
+
+	void PathSearch::ClearQueue()
+	{
+		for (int i = 0; i < queue.size(); i++)
+		{
+			PlannerNode* pNode = queue.front();
+			queue.remove(pNode);
+
+			if (visited.find(pNode->searchNode) == visited.end())
+				delete pNode;
+		}
 	}
 }}  // namespace fullsail_ai::algorithms
 

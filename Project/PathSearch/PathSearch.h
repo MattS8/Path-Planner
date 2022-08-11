@@ -49,6 +49,21 @@ namespace fullsail_ai { namespace algorithms {
 			PlannerNode* parent;
 
 			//TODO: Add cost variables for whichever search you are currently working on
+			double nodeCost;
+
+			double setNodeCost(Tile* goalTile)
+			{
+				if (parent == nullptr)
+					return 0;
+
+				Tile* thisTile = searchNode->tile;
+				double xDistance = goalTile->getXCoordinate() - thisTile->getXCoordinate();
+				xDistance *= xDistance;
+				double yDistance = goalTile->getYCoordinate() - thisTile->getYCoordinate();
+				yDistance *= yDistance;
+
+				return parent->nodeCost + sqrt(xDistance + yDistance);
+			}
 		};
 
 		std::unordered_map<Tile*, SearchNode*> nodes;
@@ -57,6 +72,8 @@ namespace fullsail_ai { namespace algorithms {
 		TileMap* tileMap;
 		
 		//TODO: Add other supporting variables and functions
+		SearchNode* goalNode;
+
 		std::pair<int, int> adjacentTilesEven[6];
 		std::pair<int, int> adjacentTilesOdd[6];
 
@@ -66,20 +83,19 @@ namespace fullsail_ai { namespace algorithms {
 			bool operator()(PlannerNode* best, PlannerNode* other)
 			{
 				return true;
-					
 					//best == nullptr
-					//|| (other != nullptr &&
-					//	best->searchNode->tile->getWeight()
-					//	< other->searchNode->tile->getWeight()
-					//   );
+					//|| (other != nullptr && best->nodeCost < other->nodeCost);
 			}
 		};
 
 		PriorityQueue<PlannerNode*, CompareNodes> queue;
 
 
-		//! \brief Cleans allocated space.
+		//! \brief Cleans allocated space in all containers.
 		void ClearContainers();
+
+		//! \brief Cleans allocated space in queue.
+		void ClearQueue();
 
 		//! \brief Guarantees to return a SearchNode
 		//! 
