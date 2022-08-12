@@ -66,7 +66,7 @@ namespace fullsail_ai { namespace algorithms {
 				double yDistance = goalCol - thisTile->getColumn();
 				yDistance *= yDistance;
 
-				return nodeCost;
+				return sqrt(xDistance + yDistance);
 			}
 
 			double getNodeCostUniform()
@@ -74,6 +74,16 @@ namespace fullsail_ai { namespace algorithms {
 				double cost = parent == nullptr ? 0 : parent->nodeCost;
 
 				return cost + searchNode->tile->getWeight();
+			}
+
+			double getNodeCostAStar(int goalRow, int goalCol, double hWeight)
+			{
+				return getNodeCostUniform() + getHueristicCost(goalRow, goalCol, hWeight);
+			}
+
+			double getHueristicCost(int goalRow, int goalCol, double hWeight)
+			{
+				return getNodeCostGreedy(goalRow, goalCol) * hWeight;
 			}
 		};
 
@@ -108,6 +118,7 @@ namespace fullsail_ai { namespace algorithms {
 			}
 		};
 		PriorityQueue<PlannerNode*, CompareNodes> queue;
+		double heuristicCost = 50.2;
 
 		//! \brief colors the tile as an open tile
 		//! 
