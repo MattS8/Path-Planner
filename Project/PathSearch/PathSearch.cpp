@@ -302,6 +302,7 @@ namespace fullsail_ai { namespace algorithms {
 			if (visited.find(pNode->searchNode) == visited.end())
 				delete pNode;
 		}
+		queue.clear();
 	}
 }}  // namespace fullsail_ai::algorithms
 
