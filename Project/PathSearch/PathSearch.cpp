@@ -100,7 +100,7 @@ namespace fullsail_ai { namespace algorithms {
 		PlannerNode* startPNode = new PlannerNode();
 		startPNode->searchNode = startNode;
 		startPNode->parent = nullptr;
-		startPNode->setNodeCost(goalNode->tile->getRow(), goalNode->tile->getColumn());
+		startPNode->nodeCost = startPNode->getNodeCostUniform();
 
 		// Push start onto queue
 		queue.push(startPNode);
@@ -139,10 +139,23 @@ namespace fullsail_ai { namespace algorithms {
 					PlannerNode* successorNode = new PlannerNode();
 					successorNode->searchNode = successor;
 					successorNode->parent = current;
-					successorNode->setNodeCost(goalNode->tile->getRow(), goalNode->tile->getColumn());
-
+					successorNode->nodeCost = successorNode->getNodeCostUniform();
+					
 					visited[successor] = successorNode;
 					queue.push(successorNode);
+				}
+				else
+				{
+					PlannerNode* successorNode = visited[successor];
+					double newCost = current->nodeCost 
+						+ successorNode->searchNode->tile->getWeight();
+					if (newCost < successorNode->nodeCost)
+					{
+						successorNode->nodeCost = newCost;
+						successorNode->parent = current;
+						queue.remove(successorNode);
+						queue.push(successorNode);
+					}
 				}
 			}
 

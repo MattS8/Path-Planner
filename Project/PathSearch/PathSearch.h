@@ -55,7 +55,7 @@ namespace fullsail_ai { namespace algorithms {
 			//TODO: Add cost variables for whichever search you are currently working on
 			double nodeCost;
 
-			double setNodeCost(int goalRow, int goalCol)
+			double getNodeCostGreedy(int goalRow, int goalCol)
 			{
 				if (parent == nullptr)
 					return 0;
@@ -66,8 +66,14 @@ namespace fullsail_ai { namespace algorithms {
 				double yDistance = goalCol - thisTile->getColumn();
 				yDistance *= yDistance;
 
-				nodeCost = sqrt(xDistance + yDistance);
 				return nodeCost;
+			}
+
+			double getNodeCostUniform()
+			{
+				double cost = parent == nullptr ? 0 : parent->nodeCost;
+
+				return cost + searchNode->tile->getWeight();
 			}
 		};
 
