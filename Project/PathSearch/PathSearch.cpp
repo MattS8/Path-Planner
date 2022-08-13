@@ -49,6 +49,7 @@ namespace fullsail_ai { namespace algorithms {
 		ClearContainers();
 		bestNode = nullptr;
 		tileMap = _tileMap;
+		searchDone = false;
 
 		// Create SearchNode graph
 		for (int row = 0; row < tileMap->getRowCount(); row++)
@@ -100,9 +101,9 @@ namespace fullsail_ai { namespace algorithms {
 		PlannerNode* startPNode = new PlannerNode();
 		startPNode->searchNode = startNode;
 		startPNode->parent = nullptr;
-		startPNode->nodeCost = startPNode->getNodeCostAStar(
-			goalNode->tile->getRow(), goalNode->tile->getColumn(),
-			heuristicCost);
+		startPNode->givenCost = 0;
+		startPNode->heuristicCost = DistanceToGoal(startPNode->searchNode->tile);
+		startPNode->nodeCost = startPNode->givenCost + (startPNode->heuristicCost * heuristicWeight);
 
 		// Push start onto queue
 		queue.push(startPNode);
@@ -127,24 +128,26 @@ namespace fullsail_ai { namespace algorithms {
 			if (current->searchNode == goalNode)
 			{
 				// Goal Achieved
-				queue.clear();
+				searchDone = true;
 				return;
 			}
 
-			int sz = current->searchNode->neighbors.size();
 			for (int i = 0; i < current->searchNode->neighbors.size(); ++i)
 			{
 				SearchNode* successor = current->searchNode->neighbors[i];
+				int newGivenCost = current->givenCost
+					+ successor->tile->getWeight();
 
 				if (visited.find(successor) == visited.end())
 				{
 					PlannerNode* successorNode = new PlannerNode();
-					successorNode->searchNode = successor;
 					successorNode->parent = current;
-					successorNode->nodeCost = successorNode->getNodeCostAStar(
-						goalNode->tile->getRow(), goalNode->tile->getColumn(),
-						heuristicCost
-					);
+					successorNode->searchNode = successor;
+
+					successorNode->givenCost = newGivenCost;
+					successorNode->heuristicCost = DistanceToGoal(successor->tile);
+					successorNode->nodeCost = successorNode->givenCost
+						+ (successorNode->heuristicCost * heuristicWeight);
 					
 					visited[successor] = successorNode;
 					queue.push(successorNode);
@@ -152,23 +155,83 @@ namespace fullsail_ai { namespace algorithms {
 				else
 				{
 					PlannerNode* successorNode = visited[successor];
-					double newCost = current->nodeCost
-						+ successorNode->getHueristicCost(
-							goalNode->tile->getRow(), goalNode->tile->getColumn(),
-							heuristicCost);
-					if (newCost < successorNode->nodeCost)
+					if (newGivenCost < successorNode->givenCost)
 					{
-						successorNode->nodeCost = newCost;
 						successorNode->parent = current;
+						successorNode->givenCost = newGivenCost;
+						successorNode->nodeCost = successorNode->givenCost
+							+ (successorNode->heuristicCost * heuristicWeight);
 						queue.remove(successorNode);
 						queue.push(successorNode);
 					}
 				}
 			}
 
-			timeslice -= 1;
+			--timeslice;
 		}
 
+
+		DrawTiles();
+	}
+
+	void PathSearch::exit()
+	{
+		bestNode = nullptr;
+
+		queue.clear();
+
+		for (auto itter = visited.begin(); itter != visited.end(); itter++)
+			delete itter->second;
+		visited.clear();
+	}
+
+	void PathSearch::shutdown()
+	{
+		goalNode = nullptr;
+		bestNode = nullptr;
+		ClearContainers();
+	}
+
+	bool PathSearch::isDone() const
+	{
+		return searchDone;
+	}
+
+	std::vector<Tile const*> const PathSearch::getSolution() const
+	{
+		std::vector<Tile const*> temp;
+
+		for (PlannerNode* curr = bestNode; curr != nullptr; curr = curr->parent)
+			temp.push_back(curr->searchNode->tile);
+
+		DrawTiles();
+
+		return temp;
+	}
+
+	void const PathSearch::MarkTileAsOpen(Tile* tile, int grade) const
+	{
+		unsigned int openColor = max(255 - (30 * grade), 100);
+		openColor = openColor << 8;
+		openColor |= 0xFF000000;
+
+		tile->setMarker(openColor);
+	}
+
+	void const PathSearch::MarkTileAsNeighbor(Tile* tile) const
+	{
+		tile->setOutline(COLOR_BEST_NEIGHBOR_OUTLINE);
+		//tile->setFill(COLOR_BEST_NEIGHBOR_OUTLINE);
+	}
+
+	void const PathSearch::MarkTileAsVisited(Tile* tile) const
+	{
+		tile->setFill(COLOR_VISITED);
+		tile->setOutline(COLOR_VISITED);
+	}
+
+	void const PathSearch::DrawTiles() const
+	{
 		// Draw
 		tileMap->resetTileDrawing();
 		// Draw Visited
@@ -187,61 +250,7 @@ namespace fullsail_ai { namespace algorithms {
 		debug_DrawLineThroughPath();
 	}
 
-	void PathSearch::exit()
-	{
-		bestNode = nullptr;
-
-		ClearQueue();
-
-		for (auto itter = visited.begin(); itter != visited.end(); itter++)
-			delete itter->second;
-		visited.clear();
-	}
-
-	void PathSearch::shutdown()
-	{
-		goalNode = nullptr;
-		bestNode = nullptr;
-		ClearContainers();
-	}
-
-	bool PathSearch::isDone() const
-	{
-		return queue.empty();
-	}
-
-	std::vector<Tile const*> const PathSearch::getSolution() const
-	{
-		std::vector<Tile const*> temp;
-
-		for (PlannerNode* curr = bestNode; curr != nullptr; curr = curr->parent)
-			temp.push_back(curr->searchNode->tile);
-
-		return temp;
-	}
-
-	void PathSearch::MarkTileAsOpen(Tile* tile, int grade)
-	{
-		unsigned int openColor = max(255 - (30 * grade), 100);
-		openColor = openColor << 8;
-		openColor |= 0xFF000000;
-
-		tile->setMarker(openColor);
-	}
-
-	void PathSearch::MarkTileAsNeighbor(Tile* tile)
-	{
-		tile->setOutline(COLOR_BEST_NEIGHBOR_OUTLINE);
-		//tile->setFill(COLOR_BEST_NEIGHBOR_OUTLINE);
-	}
-
-	void PathSearch::MarkTileAsVisited(Tile* tile)
-	{
-		tile->setFill(COLOR_VISITED);
-		tile->setOutline(COLOR_VISITED);
-	}
-
-	void PathSearch::debug_DrawLineThroughPath()
+	void const PathSearch::debug_DrawLineThroughPath() const
 	{
 		PlannerNode* current = bestNode;
 
@@ -300,7 +309,7 @@ namespace fullsail_ai { namespace algorithms {
 
 	void PathSearch::ClearContainers()
 	{
-		ClearQueue();
+		queue.clear();
 
 		for (auto itter = nodes.begin(); itter != nodes.end(); itter++)
 			delete itter->second;
@@ -312,17 +321,21 @@ namespace fullsail_ai { namespace algorithms {
 		visited.clear();
 	}
 
-	void PathSearch::ClearQueue()
+	double PathSearch::DistanceToGoal(Tile* tile)
 	{
-		for (int i = 0; i < queue.size(); i++)
-		{
-			PlannerNode* pNode = queue.front();
-			queue.remove(pNode);
+		double xDistance = goalNode->tile->getRow() - tile->getRow();
+		xDistance *= xDistance;
+		double yDistance = goalNode->tile->getColumn() - tile->getColumn();
+		yDistance *= yDistance;
 
-			if (visited.find(pNode->searchNode) == visited.end())
-				delete pNode;
-		}
-		queue.clear();
+		return sqrt(xDistance + yDistance);
+	}
+
+	double PathSearch::ManhattanDistanceToGoal(Tile* tile)
+	{
+		double xDistance = abs(goalNode->tile->getRow() - tile->getRow());
+		double yDistance = abs(goalNode->tile->getColumn() - tile->getColumn());
+		return xDistance + yDistance;
 	}
 }}  // namespace fullsail_ai::algorithms
 

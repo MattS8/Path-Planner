@@ -54,37 +54,8 @@ namespace fullsail_ai { namespace algorithms {
 
 			//TODO: Add cost variables for whichever search you are currently working on
 			double nodeCost;
-
-			double getNodeCostGreedy(int goalRow, int goalCol)
-			{
-				if (parent == nullptr)
-					return 0;
-
-				Tile* thisTile = searchNode->tile;
-				double xDistance = goalRow - thisTile->getRow();
-				xDistance *= xDistance;
-				double yDistance = goalCol - thisTile->getColumn();
-				yDistance *= yDistance;
-
-				return sqrt(xDistance + yDistance);
-			}
-
-			double getNodeCostUniform()
-			{
-				double cost = parent == nullptr ? 0 : parent->nodeCost;
-
-				return cost + searchNode->tile->getWeight();
-			}
-
-			double getNodeCostAStar(int goalRow, int goalCol, double hWeight)
-			{
-				return getNodeCostUniform() + getHueristicCost(goalRow, goalCol, hWeight);
-			}
-
-			double getHueristicCost(int goalRow, int goalCol, double hWeight)
-			{
-				return getNodeCostGreedy(goalRow, goalCol) * hWeight;
-			}
+			int givenCost;
+			double heuristicCost;
 		};
 
 		// Search graph
@@ -100,6 +71,8 @@ namespace fullsail_ai { namespace algorithms {
 		SearchNode* goalNode = nullptr;
 		// Current best path along search
 		PlannerNode* bestNode = nullptr;
+		// Flags when search is finished
+		bool searchDone = false;
 
 		// Constant offsets used to link neighbors during search graph initialization
 		std::pair<int, int> adjacentTilesEven[6];
@@ -110,15 +83,16 @@ namespace fullsail_ai { namespace algorithms {
 		public:
 			bool operator()(PlannerNode* best, PlannerNode* other)
 			{
-				return best != nullptr && other != nullptr
-					&& best != other
-					&& best->nodeCost > other->nodeCost;
+				return best->nodeCost > other->nodeCost;
 				//return best == nullptr
 				//	|| (other != nullptr && best->nodeCost > other->nodeCost);
 			}
 		};
 		PriorityQueue<PlannerNode*, CompareNodes> queue;
-		double heuristicCost = 50.2;
+		double heuristicWeight = 1;
+
+		//! \brief draws all tiles
+		void const DrawTiles() const;
 
 		//! \brief colors the tile as an open tile
 		//! 
@@ -127,19 +101,19 @@ namespace fullsail_ai { namespace algorithms {
 		//! \param   grade  the higher the grade, the darker/further
 		//!					away the node is from becoming the successor
 		//!					node.
-		void MarkTileAsOpen(Tile* tile, int grade);
+		void const MarkTileAsOpen(Tile* tile, int grade) const;
 
 		//! \brief colors the tile as a neighbor to bestNode
-		void MarkTileAsNeighbor(Tile* tile);
+		void const MarkTileAsNeighbor(Tile* tile) const;
 
 		//! \brief colors the tile as a visited tile
-		void MarkTileAsVisited(Tile* tile);
+		void const MarkTileAsVisited(Tile* tile) const;
 
 		//! \brief Cleans allocated space in all containers.
 		void ClearContainers();
 
 		//! \brief Cleans allocated space in queue.
-		void ClearQueue();
+		//void ClearQueue();
 
 		//! \brief Guarantees to return a SearchNode
 		//! 
@@ -153,10 +127,15 @@ namespace fullsail_ai { namespace algorithms {
 		//! /return  Guaranteed valid pointer	
 		SearchNode* GetSearchNode(Tile* tile);
 
+		//! \brief Distance calculation of tile to goal for heuristics
+		double DistanceToGoal(Tile* tile);
+
+		double ManhattanDistanceToGoal(Tile* tile);
+
 		// DEBUG FUNCTIONS
 		void debug_PrintSearchNodes();
 		void debug_DrawSearchNodeConnections(SearchNode* searchNode = nullptr);
-		void debug_DrawLineThroughPath();
+		void const debug_DrawLineThroughPath() const;
 	public:
 		//! \brief Default constructor.
 		DLLEXPORT PathSearch();
